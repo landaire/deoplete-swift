@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 import json
+import tempfile
 
 from .base import Base
 
@@ -32,19 +33,24 @@ class Source(Base):
         buf = self.vim.current.buffer
         offset = self.vim.call('line2byte', line) + \
             charpos2bytepos(self.vim, context['input'][: column], column) - 1
-        offset += len(context['complete_str'])
         source = '\n'.join(buf).encode()
 
-        args = [self.source_kitten_binary(), "complete", "--offset", str(offset)]
+        fp = tempfile.NamedTemporaryFile(delete=False, suffix=".swift")
+        fp.write(source)
+        fp.flush()
+        fp.close()
+
+        args = [self.source_kitten_binary(), "complete", "--file", fp.name, "--offset", str(offset)]
 
         process = subprocess.Popen(args,
                                    stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    start_new_session=True)
-        process.stdin.write(source)
         stdout_data, stderr_data = process.communicate()
         result = stdout_data.decode()
+
+        os.remove(fp.name)
 
         if stderr_data != b'':
             raise Exception((args, stderr_data.decode()))
