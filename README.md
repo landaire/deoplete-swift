@@ -20,5 +20,5 @@ on your system. This is optional and will be found in your `$PATH` if not set
 
 # TODO:
 
-- [] Add sourcekittendaemon support (#2). This will allow better project-based completion
-- [] Add placeholders/placeholder jumping in method arguments
+- [ ] Add sourcekittendaemon support (#2). This will allow better project-based completion
+- [ ] Add placeholders/placeholder jumping in method arguments
