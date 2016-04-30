@@ -15,9 +15,10 @@ Plug 'landaire/deoplete-swift'
 
 Default configuration:
 
-`let g:deoplete#sources#swift#sourcekittendaemon = ''` location of the `sourcekittendaemon`
+`let g:deoplete#sources#swift#source_kitten_binary = ''` location of `sourcekitten`
 on your system. This is optional and will be found in your `$PATH` if not set
 
-`let g:deoplete#sources#swift#daemon_autostart = 1` - whether or not `sourcekittendaemon`
-should be auto-started
+# TODO:
 
+- [] Add sourcekittendaemon support (#2). This will allow better project-based completion
+- [] Add placeholders/placeholder jumping in method arguments
