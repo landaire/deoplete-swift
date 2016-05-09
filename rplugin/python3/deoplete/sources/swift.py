@@ -62,19 +62,16 @@ class Source(Base):
     def identifiers_from_result(self, result):
         out = []
 
-        candidates = []
         longest_desc_length = 0
         longest_desc = ''
         for complete in result:
-            candidates.append(complete)
-
             desc_len = len(complete['name'])
 
             if desc_len > longest_desc_length:
                 longest_desc = complete['name']
                 longest_desc_length = desc_len
 
-        for completion in candidates:
+        for completion in result:
             description = completion['name']
             _type = completion['typeName']
             abbr = description + ' ' + _type.rjust((len(description) - longest_desc_length) + 1)
