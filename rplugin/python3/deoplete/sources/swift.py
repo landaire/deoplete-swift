@@ -119,12 +119,9 @@ class Source(Base):
         return ' '.join(param_list)
 
     def source_kitten_binary(self):
-        try:
-            if os.access(self._source_kitten_binary, mode=os.X_OK):
-                return self._source_kitten_binary
-            else:
-                raise
-        except Exception:
+        if os.access(self._source_kitten_binary, mode=os.X_OK):
+            return self._source_kitten_binary
+        else:
             return self.find_binary_path('sourcekitten')
 
     def find_binary_path(self, cmd):
