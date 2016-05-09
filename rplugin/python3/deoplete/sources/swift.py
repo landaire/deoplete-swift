@@ -90,33 +90,6 @@ class Source(Base):
 
         return out
 
-    def calltips_from_result(self, result):
-        out = []
-
-        result = result[1:]
-        for calltip in result:
-            candidate = dict(
-                abbr=calltip,
-                word=self.parse_function_parameters(calltip),
-                info=calltip
-            )
-
-            out.append(candidate)
-
-        return out
-
-    def parse_function_parameters(self, decl):
-        """Parses the function parameters from a function decl, returns them as a string"""
-        last_lparen = decl.rfind('(')
-        last_rparen = decl.rfind(')')
-
-        param_list = decl[last_lparen + 1 : last_rparen]
-        param_list = param_list.split(' ')
-        # take only the names
-        param_list = param_list[1::2]
-
-        return ' '.join(param_list)
-
     def source_kitten_binary(self):
         try:
             if os.path.isfile(self._source_kitten_binary):
