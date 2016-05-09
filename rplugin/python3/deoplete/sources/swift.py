@@ -60,23 +60,20 @@ class Source(Base):
         return self.identifiers_from_result(results)
 
     def identifiers_from_result(self, result):
-        out = []
-
-        for completion in result:
-            description = completion['name']
-            _type = completion['typeName']
+        def convert(candidate):
+            description = candidate['name']
+            _type = candidate['typeName']
             abbr = '{} {}'.format(description, _type)
             info = _type
 
-            candidate = dict(word=description,
-                              abbr=abbr,
-                              info=info,
-                              dup=1
-                              )
+            return dict(
+                word=description,
+                abbr=abbr,
+                info=info,
+                dup=1
+            )
 
-            out.append(candidate)
-
-        return out
+        return [convert(candidate) for candidate in result]
 
     def calltips_from_result(self, result):
         out = []
