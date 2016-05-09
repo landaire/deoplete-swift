@@ -61,9 +61,9 @@ class Source(Base):
 
     def identifiers_from_result(self, result):
         def convert(candidate):
-            description = candidate['name']
+            description = candidate['sourcetext']
             _type = candidate['typeName']
-            abbr = '{} {}'.format(description, _type)
+            abbr = '{} {}'.format(candidate['name'], _type)
             info = _type
 
             return dict(

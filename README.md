@@ -11,6 +11,13 @@ better than I do):
 Plug 'landaire/deoplete-swift'
 ```
 
+For jumping to placeholders, add the following keymapping to your configuration:
+
+```vim
+" Jump to the first placeholder by typing `<C-j>`.
+autocmd FileType swift imap <buffer> <C-j> <Plug>(deoplete_swift_jump_to_placeholder)
+```
+
 ## Configuration
 
 Default configuration:
@@ -21,4 +28,3 @@ on your system. This is optional and will be found in your `$PATH` if not set
 # TODO:
 
 - [ ] Add sourcekittendaemon support (#2). This will allow better project-based completion
-- [ ] Add placeholders/placeholder jumping in method arguments
