@@ -63,12 +63,10 @@ class Source(Base):
         out = []
 
         longest_desc_length = 0
-        longest_desc = ''
         for complete in result:
             desc_len = len(complete['name'])
 
             if desc_len > longest_desc_length:
-                longest_desc = complete['name']
                 longest_desc_length = desc_len
 
         for completion in result:
