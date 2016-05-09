@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import subprocess
 import sys
 import json
@@ -118,27 +119,14 @@ class Source(Base):
         return ' '.join(param_list)
 
     def source_kitten_binary(self):
-        try:
-            if os.path.isfile(self._source_kitten_binary):
-                return self._source_kitten_binary
-            else:
-                raise
-        except Exception:
+        if os.access(self._source_kitten_binary, mode=os.X_OK):
+            return self._source_kitten_binary
+        else:
             return self.find_binary_path('sourcekitten')
 
     def find_binary_path(self, cmd):
-        def is_exec(fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+        path = shutil.which(cmd, mode=os.X_OK)
+        if path is None:
+            return error(self.vim, cmd + ' binary not found')
 
-        fpath, fname = os.path.split(cmd)
-        if fpath:
-            if is_exec(cmd):
-                return cmd
-        else:
-            for path in os.environ["PATH"].split(os.pathsep):
-                path = path.strip('"')
-                binary = os.path.join(path, cmd)
-                if is_exec(binary):
-                    return binary
-        return error(self.vim, cmd + ' binary not found')
-
+        return path
