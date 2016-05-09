@@ -120,7 +120,7 @@ class Source(Base):
 
     def source_kitten_binary(self):
         try:
-            if os.path.isfile(self._source_kitten_binary):
+            if os.access(self._source_kitten_binary, mode=os.X_OK):
                 return self._source_kitten_binary
             else:
                 raise
