@@ -61,35 +61,20 @@ class Source(Base):
         return self.identifiers_from_result(results)
 
     def identifiers_from_result(self, result):
-        out = []
-
-        candidates = []
-        longest_desc_length = 0
-        longest_desc = ''
-        for complete in result:
-            candidates.append(complete)
-
-            desc_len = len(complete['name'])
-
-            if desc_len > longest_desc_length:
-                longest_desc = complete['name']
-                longest_desc_length = desc_len
-
-        for completion in candidates:
-            description = completion['name']
-            _type = completion['typeName']
-            abbr = description + ' ' + _type.rjust((len(description) - longest_desc_length) + 1)
+        def convert(candidate):
+            description = candidate['sourcetext']
+            _type = candidate['typeName']
+            abbr = '{} {}'.format(candidate['name'], _type)
             info = _type
 
-            candidate = dict(word=description,
-                              abbr=abbr,
-                              info=info,
-                              dup=1
-                              )
+            return dict(
+                word=description,
+                abbr=abbr,
+                info=info,
+                dup=1
+            )
 
-            out.append(candidate)
-
-        return out
+        return [convert(candidate) for candidate in result]
 
     def source_kitten_binary(self):
         if os.access(self._source_kitten_binary, mode=os.X_OK):
