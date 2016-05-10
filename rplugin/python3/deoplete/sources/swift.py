@@ -87,7 +87,7 @@ class SourceKitten(object):
 
         stdout_data, stderr_data = SourceKitten.__execute(command_complete)
         if stderr_data != b'':
-            raise Exception((command_complete, stderr_data.decode()))
+            raise SourceKittenCompletionFailed(path, offset, stderr.decode())
 
         return json.loads(stdout_data.decode())
 
@@ -112,6 +112,25 @@ class SourceKitten(object):
             raise SourceKittenNotFound(default)
 
         return default
+
+
+class SourceKittenCompletionFailed(Exception):
+    def __init__(self, path, offset, error):
+        self.__path = path
+        self.__offset = offset
+        self.__error = error
+
+    @property
+    def path(self):
+        return self.__path
+
+    @property
+    def offset(self):
+        return self.__offset
+
+    @property
+    def error(self):
+        return self.__error
 
 
 class SourceKittenNotFound(Exception):
