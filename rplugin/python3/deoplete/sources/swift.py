@@ -21,7 +21,7 @@ class Source(Base):
         self.input_pattern = r'(?:\b[^\W\d]\w*|[\]\)])(?:\.(?:[^\W\d]\w*)?)*\(?'
         self.rank = 500
 
-        self._source_kitten_binary = self.vim.vars['deoplete#sources#swift#source_kitten_binary']
+        self.__source_kitten = SourceKitten(command=self.source_kitten_binary())
 
     def get_complete_position(self, context):
         m = re.search(r'\w*$', context['input'])
@@ -41,24 +41,16 @@ class Source(Base):
         fp.flush()
         fp.close()
 
-        args = [self.source_kitten_binary(), "complete", "--file", fp.name, "--offset", str(offset)]
-
-        process = subprocess.Popen(args,
-                                   stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   start_new_session=True)
-        stdout_data, stderr_data = process.communicate()
-        result = stdout_data.decode()
-
-        os.remove(fp.name)
-
-        if stderr_data != b'':
-            raise Exception((args, stderr_data.decode()))
-
-        results = json.loads(result)
+        client = self.__decide_completer(fp.name)
+        try:
+            results = client.complete(fp.name, offset)
+        finally:
+            os.remove(fp.name)
 
         return self.identifiers_from_result(results)
+
+    def __decide_completer(self, path):
+        return self.__source_kitten
 
     def identifiers_from_result(self, result):
         def convert(candidate):
@@ -77,8 +69,9 @@ class Source(Base):
         return [convert(candidate) for candidate in result]
 
     def source_kitten_binary(self):
-        if os.access(self._source_kitten_binary, mode=os.X_OK):
-            return self._source_kitten_binary
+        path = self.vim.vars['deoplete#sources#swift#source_kitten_binary']
+        if os.access(path, mode=os.X_OK):
+            return path
         else:
             return self.find_binary_path('sourcekitten')
 
@@ -88,3 +81,35 @@ class Source(Base):
             return error(self.vim, cmd + ' binary not found')
 
         return path
+
+
+class SourceKitten(object):
+    def __init__(self, command='sourcekitten'):
+        self.__command = command
+
+    def complete(self, path, offset):
+        command_complete = [
+            self.__command,
+            'complete',
+            '--file', path,
+            '--offset', str(offset)
+        ]
+
+        stdout_data, stderr_data = SourceKitten.__execute(command_complete)
+        result = stdout_data.decode()
+
+        if stderr_data != b'':
+            raise Exception((command_complete, stderr_data.decode()))
+
+        return json.loads(result)
+
+    @staticmethod
+    def __execute(command):
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True
+        )
+        return process.communicate()
