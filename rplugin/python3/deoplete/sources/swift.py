@@ -21,7 +21,12 @@ class Source(Base):
         self.input_pattern = r'(?:\b[^\W\d]\w*|[\]\)])(?:\.(?:[^\W\d]\w*)?)*\(?'
         self.rank = 500
 
-        self.__source_kitten = SourceKitten(command=self.source_kitten_binary())
+        try:
+            self.__source_kitten = SourceKitten(
+                path=vim.vars['deoplete#sources#swift#source_kitten_binary']
+            )
+        except SourceKittenNotFound as exception:
+            error(vim, '{} binary not found'.format(exception.path))
 
     def get_complete_position(self, context):
         m = re.search(r'\w*$', context['input'])
@@ -67,24 +72,10 @@ class Source(Base):
 
         return [convert(candidate) for candidate in result]
 
-    def source_kitten_binary(self):
-        path = self.vim.vars['deoplete#sources#swift#source_kitten_binary']
-        if os.access(path, mode=os.X_OK):
-            return path
-        else:
-            return self.find_binary_path('sourcekitten')
-
-    def find_binary_path(self, cmd):
-        path = shutil.which(cmd, mode=os.X_OK)
-        if path is None:
-            return error(self.vim, cmd + ' binary not found')
-
-        return path
-
 
 class SourceKitten(object):
-    def __init__(self, command='sourcekitten'):
-        self.__command = command
+    def __init__(self, path=None):
+        self.__command = SourceKitten.validate_command(path)
 
     def complete(self, path, offset):
         command_complete = [
@@ -110,3 +101,23 @@ class SourceKitten(object):
             start_new_session=True
         )
         return process.communicate()
+
+    @staticmethod
+    def validate_command(path):
+        if os.access(path, mode=os.X_OK):
+            return path
+
+        default = shutil.which('sourcekitten', mode=os.X_OK)
+        if default is None:
+            raise SourceKittenNotFound(default)
+
+        return default
+
+
+class SourceKittenNotFound(Exception):
+    def __init__(self, path):
+        self.__path = path
+
+    @property
+    def path(self):
+        return self.__path
