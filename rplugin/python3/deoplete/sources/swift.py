@@ -45,15 +45,15 @@ class Source(Base):
             fp.write(source)
             path = fp.name
 
-        client = self.__decide_completer(path)
+        completer = self.__choose_completer(path)
         try:
-            results = client.complete(path, offset)
+            results = completer.complete(path, offset)
         finally:
             os.remove(path)
 
         return self.identifiers_from_result(results)
 
-    def __decide_completer(self, path):
+    def __choose_completer(self, path):
         return self.__source_kitten
 
     def identifiers_from_result(self, result):
