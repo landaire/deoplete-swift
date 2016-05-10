@@ -95,12 +95,10 @@ class SourceKitten(object):
         ]
 
         stdout_data, stderr_data = SourceKitten.__execute(command_complete)
-        result = stdout_data.decode()
-
         if stderr_data != b'':
             raise Exception((command_complete, stderr_data.decode()))
 
-        return json.loads(result)
+        return json.loads(stdout_data.decode())
 
     @staticmethod
     def __execute(command):
