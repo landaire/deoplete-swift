@@ -36,16 +36,15 @@ class Source(Base):
             charpos2bytepos(self.vim, context['input'][: column], column) - 1
         source = '\n'.join(buf).encode()
 
-        fp = tempfile.NamedTemporaryFile(delete=False, suffix=".swift")
-        fp.write(source)
-        fp.flush()
-        fp.close()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".swift") as fp:
+            fp.write(source)
+            path = fp.name
 
-        client = self.__decide_completer(fp.name)
+        client = self.__decide_completer(path)
         try:
-            results = client.complete(fp.name, offset)
+            results = client.complete(path, offset)
         finally:
-            os.remove(fp.name)
+            os.remove(path)
 
         return self.identifiers_from_result(results)
 
