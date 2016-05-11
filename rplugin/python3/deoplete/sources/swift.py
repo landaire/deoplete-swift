@@ -21,7 +21,12 @@ class Source(Base):
         self.input_pattern = r'(?:\b[^\W\d]\w*|[\]\)])(?:\.(?:[^\W\d]\w*)?)*\(?'
         self.rank = 500
 
-        self._source_kitten_binary = self.vim.vars['deoplete#sources#swift#source_kitten_binary']
+        try:
+            self.__source_kitten = SourceKitten(
+                path=vim.vars['deoplete#sources#swift#source_kitten_binary']
+            )
+        except SourceKittenNotFound as exception:
+            error(vim, '{} binary not found'.format(exception.path))
 
     def get_complete_position(self, context):
         m = re.search(r'\w*$', context['input'])
@@ -36,29 +41,20 @@ class Source(Base):
             charpos2bytepos(self.vim, context['input'][: column], column) - 1
         source = '\n'.join(buf).encode()
 
-        fp = tempfile.NamedTemporaryFile(delete=False, suffix=".swift")
-        fp.write(source)
-        fp.flush()
-        fp.close()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".swift") as fp:
+            fp.write(source)
+            path = fp.name
 
-        args = [self.source_kitten_binary(), "complete", "--file", fp.name, "--offset", str(offset)]
-
-        process = subprocess.Popen(args,
-                                   stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   start_new_session=True)
-        stdout_data, stderr_data = process.communicate()
-        result = stdout_data.decode()
-
-        os.remove(fp.name)
-
-        if stderr_data != b'':
-            raise Exception((args, stderr_data.decode()))
-
-        results = json.loads(result)
+        completer = self.__choose_completer(path)
+        try:
+            results = completer.complete(path, offset)
+        finally:
+            os.remove(path)
 
         return self.identifiers_from_result(results)
+
+    def __choose_completer(self, path):
+        return self.__source_kitten
 
     def identifiers_from_result(self, result):
         def convert(candidate):
@@ -76,15 +72,71 @@ class Source(Base):
 
         return [convert(candidate) for candidate in result]
 
-    def source_kitten_binary(self):
-        if os.access(self._source_kitten_binary, mode=os.X_OK):
-            return self._source_kitten_binary
-        else:
-            return self.find_binary_path('sourcekitten')
 
-    def find_binary_path(self, cmd):
-        path = shutil.which(cmd, mode=os.X_OK)
-        if path is None:
-            return error(self.vim, cmd + ' binary not found')
+class SourceKitten(object):
+    def __init__(self, path=None):
+        self.__command = SourceKitten.validate_command(path)
 
-        return path
+    def complete(self, path, offset):
+        command_complete = [
+            self.__command,
+            'complete',
+            '--file', path,
+            '--offset', str(offset)
+        ]
+
+        stdout_data, stderr_data = SourceKitten.__execute(command_complete)
+        if stderr_data != b'':
+            raise SourceKittenCompletionFailed(path, offset, stderr.decode())
+
+        return json.loads(stdout_data.decode())
+
+    @staticmethod
+    def __execute(command):
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True
+        )
+        return process.communicate()
+
+    @staticmethod
+    def validate_command(path):
+        if os.access(path, mode=os.X_OK):
+            return path
+
+        default = shutil.which('sourcekitten', mode=os.X_OK)
+        if default is None:
+            raise SourceKittenNotFound(default)
+
+        return default
+
+
+class SourceKittenCompletionFailed(Exception):
+    def __init__(self, path, offset, error):
+        self.__path = path
+        self.__offset = offset
+        self.__error = error
+
+    @property
+    def path(self):
+        return self.__path
+
+    @property
+    def offset(self):
+        return self.__offset
+
+    @property
+    def error(self):
+        return self.__error
+
+
+class SourceKittenNotFound(Exception):
+    def __init__(self, path):
+        self.__path = path
+
+    @property
+    def path(self):
+        return self.__path
