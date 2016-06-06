@@ -20,6 +20,7 @@ class Source(Base):
         self.filetypes = ['swift']
         self.input_pattern = r'(?:\b[^\W\d]\w*|[\]\)])(?:\.(?:[^\W\d]\w*)?)*\(?'
         self.rank = 500
+        self.encoding = self.vim.options['encoding']
 
         try:
             self.__source_kitten = SourceKitten(
@@ -38,7 +39,7 @@ class Source(Base):
 
         buf = self.vim.current.buffer
         offset = self.vim.call('line2byte', line) + \
-            charpos2bytepos(self.vim, context['input'][: column], column) - 1
+            charpos2bytepos(self.encoding, context['input'][: column], column) - 1
         source = '\n'.join(buf).encode()
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".swift") as fp:
